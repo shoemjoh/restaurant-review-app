@@ -1,8 +1,9 @@
+// App.js
 import React from "react";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import SignupForm from "./SignupForm";
-import ReviewForm from "./ReviewForm";
-import RestaurantList from "./RestaurantList";
+import SignupForm from "./components/SignupForm";
+import ReviewForm from "./components/ReviewForm";
+import RestaurantList from "./components/RestaurantList";
 
 function App() {
   return (
@@ -11,18 +12,15 @@ function App() {
         <header>
           <h1>Restaurant Review App</h1>
           <nav>
-            <Link to="/signup">Signup</Link> |{" "}
+            <Link to="/signup">Sign Up</Link> |{" "}
             <Link to="/submit-review">Submit Review</Link> |{" "}
             <Link to="/restaurants">View Restaurants</Link>
           </nav>
         </header>
         <main>
           <Switch>
-            {/* Route for the SignupForm component */}
             <Route path="/signup" component={SignupForm} />
-            {/* Route for the ReviewForm component */}
             <Route path="/submit-review" component={ReviewForm} />
-            {/* Route for viewing the list of restaurants with reviews */}
             <Route path="/restaurants" component={RestaurantList} />
           </Switch>
         </main>
