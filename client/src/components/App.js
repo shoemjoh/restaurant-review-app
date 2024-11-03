@@ -1,9 +1,9 @@
 // App.js
 import React from "react";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import SignupForm from "./components/SignupForm";
-import ReviewForm from "./components/ReviewForm";
-import RestaurantList from "./components/RestaurantList";
+import SignupForm from "./SignupForm";
+import ReviewForm from "./ReviewForm";
+import RestaurantList from "./RestaurantList";
 
 function App() {
   return (

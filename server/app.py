@@ -22,6 +22,7 @@ class Signup(Resource):
             email=data.get('email',''),
         )
         user.password_hash = data['password']
+        print("Password hash:", user._password_hash)
         db.session.add(user)
         db.session.commit()
         session['user_id'] = user.id
@@ -84,11 +85,6 @@ class ReviewUpdateDelete(Resource):
         db.session.delete(review)
         db.session.commit()
         return '', 204
-
-class Restaurants(Resource):
-    def get(self):
-        restaurants = Restaurant.query.all()
-        return [restaurant.todict() for restaurant in restaurants], 200
         
 
 @app.route('/')
@@ -97,7 +93,6 @@ def index():
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
-api.add_resource(Restaurants, '/restaurants')
 api.add_resource(ReviewCreate, '/reviews')
 api.add_resource(ReviewList, '/reviews/list')
 api.add_resource(ReviewUpdateDelete, '/reviews/<int:review_id>')
