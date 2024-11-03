@@ -3,7 +3,7 @@
 # Standard library imports
 
 # Remote library imports
-from flask import request, session
+from flask import request, jsonify, session
 from flask_restful import Resource
 
 # Local imports
@@ -68,23 +68,27 @@ class ReviewList(Resource):
             reviews = Review.query.all()
         return jsonify([review.to_dict() for review in reviews])
 
+class ReviewUpdateDelete(Resource):
+    def patch(self, review_id):
+        review = Review.query.get_or_404(review_id)
+        data = request.get_json()
+        if 'content' in data:
+            review.content = data['content']
+        if 'rating' in data:
+            review.rating = data['rating']
+        db.session.commit()
+        return review.to_dict()
+
+    def delete(self, review_id):
+        review = Review.query.get_or_404(review_id)
+        db.session.delete(review)
+        db.session.commit()
+        return '', 204
+
 class Restaurants(Resource):
     def get(self):
         restaurants = Restaurant.query.all()
         return [restaurant.todict() for restaurant in restaurants], 200
-
-class Reviews(Resource):
-    def post(self):
-        data = request.get_json()
-        review = Review(
-            content=data['content'],
-            rating=data['rating'],
-            user_id=data['user_id'],
-            restaurant_id=data['restaurant_id']
-        )
-        db.session.add(review)
-        db.session.commit()
-        return review.to_dict(), 200
         
 
 @app.route('/')
@@ -94,8 +98,9 @@ def index():
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Restaurants, '/restaurants')
-
-api.add_resource(Reviews, '/reviews')
+api.add_resource(ReviewCreate, '/reviews')
+api.add_resource(ReviewList, '/reviews/list')
+api.add_resource(ReviewUpdateDelete, '/reviews/<int:review_id>')
 
 
 if __name__ == '__main__':
