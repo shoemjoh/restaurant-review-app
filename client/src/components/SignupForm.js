@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import "./SignupForm.css"; // Import the CSS file
+import "../index.css"; // Import the CSS file
 
 function SignupForm() {
     const [username, setUsername] = useState("");
