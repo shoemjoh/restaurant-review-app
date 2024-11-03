@@ -30,3 +30,10 @@ class User(db.Model, SerializerMixin):
     def __repr__(self):
         return f'<User {self.username}>'
 
+class Restaurant(db.Model, SerializerMixin):
+    __tablename__ = 'restaurants'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String, nullable=False)
+    reviews = db.relationship('Review', backref='restaurant')
