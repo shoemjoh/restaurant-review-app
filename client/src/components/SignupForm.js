@@ -1,25 +1,49 @@
+
 import React, { useState } from "react";
+import "./SignupForm.css"; // Import the CSS file
 
 function SignupForm() {
     const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    function handleSubmit(e) {
-        e.preventDefault();
-        fetch("/signup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password }),
-        })
-            .then((r) => r.json())
-            .then((user) => console.log("Signed up:", user));
+    function handleSubmit(event) {
+        event.preventDefault();
+        // Logic to handle form submission
+        console.log("Form submitted", { username, email, password });
     }
+
     return (
-        <form onSubmit={handleSubmit}>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" />
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
-            <button type="submit">Sign Up</button>
-        </form>
+        <div className="signup-form-container">
+            <h2 className="signup-form-title">Sign Up</h2>
+            <form onSubmit={handleSubmit}>
+                <input
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="signup-form-input"
+                />
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="signup-form-input"
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="signup-form-input"
+                />
+                <button type="submit" className="signup-form-button">
+                    Create Account
+                </button>
+            </form>
+            <p className="signup-form-text">Already have an account? Log in.</p>
+        </div>
     );
 }
 
