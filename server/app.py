@@ -59,6 +59,14 @@ class ReviewCreate(Resource):
         db.session.commit()
         return review.to_dict(), 201
 
+class ReviewList(Resource):
+    def get(self):
+        city = request.args.get('city')
+        if city:
+            reviews = Review.query.join(Restaurant).filter(Restaurant.city == city).all()
+        else:
+            reviews = Review.query.all()
+        return jsonify([review.to_dict() for review in reviews])
 
 class Restaurants(Resource):
     def get(self):
