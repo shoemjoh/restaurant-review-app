@@ -1,6 +1,5 @@
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
 
 
 from config import db, bcrypt
@@ -16,3 +15,13 @@ class User(db.Model, SerializerMixin):
 
     # Relationships
     reviews = db.relationship('Review', backref='users')
+
+    # Password hashing
+    @property
+    def password_hash(self):
+        return self._password_hash
+    
+    @password_hash.setter
+    def password_hash(self, password):
+        self._password_hash = bcrypt.generate_password_hash(password.encode('utf-8')).decode('utf-8')
+
