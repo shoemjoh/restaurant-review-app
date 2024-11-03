@@ -27,12 +27,23 @@ class Signup(Resource):
         session['user_id'] = user.id
         return user.to_dict(), 200
 
+class Login(Resource):
+    def post(self):
+        data = request.get_json()
+        user = User.query.filter(User.username==data['username']).first()
+        if user and user.check_password(data['password']):
+            session['user_id']=user.id
+            return user.to_dict(), 200
+        return {"error": "Invalid username or password."}, 401
+
+
 
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'
 
 api.add_resource(Signup, '/signup')
+api.add_resource(Login, '/login')
 
 
 if __name__ == '__main__':
