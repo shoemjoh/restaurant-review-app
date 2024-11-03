@@ -36,7 +36,18 @@ class Login(Resource):
             return user.to_dict(), 200
         return {"error": "Invalid username or password."}, 401
 
-
+class Reviews(Resource):
+    def post(self):
+        data = request.get_json()
+        review = Review(
+            content=data['content'],
+            rating=data['rating'],
+            user_id=data['user_id'],
+            restaurant_id=data['restaurant_id']
+        )
+        db.session.add(review)
+        db.session.commit()
+        return review.to_dict(), 200
 
 @app.route('/')
 def index():
@@ -44,6 +55,7 @@ def index():
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
+api.add_resource(Reviews, '/reviews')
 
 
 if __name__ == '__main__':
