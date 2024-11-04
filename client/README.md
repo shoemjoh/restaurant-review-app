@@ -1,70 +1,67 @@
-# Getting Started with Create React App
+Restaurant Review App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Restaurant Review App is a full-stack web application that allows users to sign up, log in, submit reviews for restaurants, and view a list of restaurants. Built with React for the frontend, Flask for the backend, and using SQLite as the database, this app demonstrates CRUD operations, user authentication, and data relationships.
 
-## Available Scripts
+Features
+User Signup & Login: Users can sign up and log in to access their accounts.
+Review Submission: Logged-in users can submit reviews for restaurants.
+Restaurant List: Users can view a list of available restaurants.
+User Authentication: User sessions are maintained, and access to certain routes is restricted to logged-in users.
+Form Validation: Uses Formik and Yup for form handling and validation.
 
-In the project directory, you can run:
+Project Structure
+Backend (Flask)
+The backend includes models for Users, Restaurants, and Reviews. The main API endpoints support user authentication, restaurant listing, and review submissions.
 
-### `npm start`
+Models:
+User: Stores user information.
+Restaurant: Represents restaurants that users can review.
+Review: Acts as an association between Users and Restaurants, storing review data.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+API Resources:
+Login: Authenticates users and creates a session.
+Signup: Registers new users.
+Logout: Ends the user session.
+Review: Allows users to submit reviews for specific restaurants.
+Restaurant: Provides a list of available restaurants.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Frontend (React)
+The frontend is built with React, using React Router for navigation and Formik with Yup for form management and validation. The app includes components for login, signup, review submission, and restaurant listing.
 
-### `npm test`
+Key Components:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+LoginForm: Form for logging in, with validation handled by Formik and Yup.
+SignupForm: Form for signing up new users.
+ReviewForm: Allows logged-in users to submit reviews.
+RestaurantList: Displays a list of restaurants.
+Navigation: Uses React Router v6 for navigation, including conditional redirects based on user authentication status.
 
-### `npm run build`
+Installation
+git clone https://github.com/your-username/restaurant-review-app.git
+cd restaurant-review-app
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+pip install -r requirements.txt
+flask db upgrade
+flask seed # Assuming a seeding script is available
+flask run
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+npm install
+npm start
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+Usage
+Sign Up: Register as a new user on the /signup page.
+Log In: Log in with your credentials on the /login page.
+View Restaurants: Navigate to /restaurants to view a list of restaurants.
+Submit a Review: After logging in, go to /submit-review to add a review for a restaurant.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Dependencies
+Backend
+Flask: For building the backend server.
+SQLite: For data storage.
+Flask-Migrate: For database migrations.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Frontend
+React: For building the user interface.
+React Router: For navigation and routing.
+Formik & Yup: For form handling and validation.
