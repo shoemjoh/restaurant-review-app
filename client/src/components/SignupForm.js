@@ -1,34 +1,52 @@
 // SignupForm.js
 import React, { useState } from "react";
 import { Redirect } from "react-router-dom";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import "./SignupForm.css";
 
+// Validation schema for form fields using Yup
+
 function SignupForm({ onSignup }) {
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [redirectToReview, setRedirectToReview] = useState(false);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        fetch("/signup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email, password }),
-        })
-            .then((response) => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error("Signup failed");
-                }
+    const SignupSchema = Yup.object().shape({
+        username: Yup.string().required("Username is required"),
+        email: Yup.string().email("Invalid email").required("Email is required"),
+        password: Yup.string()
+            .min(8, "Password must be at least 8 characters")
+            .required("Password is required"),
+    });
+
+    // Initializing Formik with initial values, validation schema, and submission handler
+    const formik = useFormik({
+        initialValues: {
+            username: "",
+            email: "",
+            password: "",
+        },
+        validationSchema: SignupSchema,
+        onSubmit: (values) => {
+            console.log("Form submitted with values:", values); // Debugging log
+            fetch("/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(values),
             })
-            .then((data) => {
-                onSignup(data.id); // Set user ID in App after signup
-                setRedirectToReview(true);
-            })
-            .catch((error) => console.error("Error:", error));
-    };
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error("Signup failed");
+                    }
+                })
+                .then((data) => {
+                    onSignup(data.id); // Set user ID in App after signup
+                    setRedirectToReview(true);
+                })
+                .catch((error) => console.error("Error:", error));
+        },
+    });
 
     if (redirectToReview) {
         return <Redirect to="/submit-review" />;
@@ -37,32 +55,58 @@ function SignupForm({ onSignup }) {
     return (
         <div className="signup-form-container">
             <h2 className="signup-form-title">Sign Up</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    className="signup-form-input"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Username"
-                    required
-                />
-                <input
-                    type="email"
-                    className="signup-form-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email"
-                    required
-                />
-                <input
-                    type="password"
-                    className="signup-form-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    required
-                />
-                <button type="submit" className="signup-form-button">
-                    Sign Up
+            <form onSubmit={formik.handleSubmit}>
+                <div>
+                    <input
+                        name="username"
+                        type="text"
+                        className="signup-form-input"
+                        placeholder="Username"
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        value={formik.values.username}
+                    />
+                    {formik.touched.username && formik.errors.username ? (
+                        <div className="signup-form-error">{formik.errors.username}</div>
+                    ) : null}
+                </div>
+
+                <div>
+                    <input
+                        name="email"
+                        type="email"
+                        className="signup-form-input"
+                        placeholder="Email"
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        value={formik.values.email}
+                    />
+                    {formik.touched.email && formik.errors.email ? (
+                        <div className="signup-form-error">{formik.errors.email}</div>
+                    ) : null}
+                </div>
+
+                <div>
+                    <input
+                        name="password"
+                        type="password"
+                        className="signup-form-input"
+                        placeholder="Password"
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        value={formik.values.password}
+                    />
+                    {formik.touched.password && formik.errors.password ? (
+                        <div className="signup-form-error">{formik.errors.password}</div>
+                    ) : null}
+                </div>
+
+                <button
+                    type="submit"
+                    className="signup-form-button"
+                    disabled={formik.isSubmitting}
+                >
+                    {formik.isSubmitting ? "Signing Up..." : "Sign Up"}
                 </button>
             </form>
             <p className="signup-form-text">
