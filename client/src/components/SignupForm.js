@@ -1,6 +1,6 @@
 // SignupForm.js
 import React, { useState } from "react";
-import { Redirect } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./SignupForm.css";
@@ -9,12 +9,11 @@ import "./SignupForm.css";
 
 function SignupForm({ onSignup }) {
     const [redirectToReview, setRedirectToReview] = useState(false);
-
+    const navigate = useNavigate();
     const SignupSchema = Yup.object().shape({
         username: Yup.string().required("Username is required"),
         email: Yup.string().email("Invalid email").required("Email is required"),
         password: Yup.string()
-            .min(8, "Password must be at least 8 characters")
             .required("Password is required"),
     });
 
@@ -42,15 +41,13 @@ function SignupForm({ onSignup }) {
                 })
                 .then((data) => {
                     onSignup(data.id); // Set user ID in App after signup
-                    setRedirectToReview(true);
+                    navigate('/submit-review')
                 })
                 .catch((error) => console.error("Error:", error));
         },
     });
 
-    if (redirectToReview) {
-        return <Redirect to="/submit-review" />;
-    }
+
 
     return (
         <div className="signup-form-container">
@@ -67,7 +64,7 @@ function SignupForm({ onSignup }) {
                         value={formik.values.username}
                     />
                     {formik.touched.username && formik.errors.username ? (
-                        <div className="signup-form-error">{formik.errors.username}</div>
+                        <p className="signup-form-error"> {formik.errors.username}</p>
                     ) : null}
                 </div>
 
@@ -82,7 +79,7 @@ function SignupForm({ onSignup }) {
                         value={formik.values.email}
                     />
                     {formik.touched.email && formik.errors.email ? (
-                        <div className="signup-form-error">{formik.errors.email}</div>
+                        <p className="signup-form-error">{formik.errors.email}</p>
                     ) : null}
                 </div>
 
@@ -97,7 +94,7 @@ function SignupForm({ onSignup }) {
                         value={formik.values.password}
                     />
                     {formik.touched.password && formik.errors.password ? (
-                        <div className="signup-form-error">{formik.errors.password}</div>
+                        <p className="signup-form-error">{formik.errors.password}</p>
                     ) : null}
                 </div>
 

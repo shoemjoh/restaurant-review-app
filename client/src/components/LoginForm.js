@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Redirect } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./LoginForm.css"; // Optional CSS file for styling
 
 function LoginForm({ onLogin }) {
@@ -7,6 +7,7 @@ function LoginForm({ onLogin }) {
     const [password, setPassword] = useState("");
     const [redirectToRestaurants, setRedirectToRestaurants] = useState(false);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -28,17 +29,14 @@ function LoginForm({ onLogin }) {
             .then((data) => {
                 console.log("Login successful:", data);
                 onLogin(data.id); // Set user ID in App after login
-                setRedirectToRestaurants(true); // Redirect after successful login
+                navigate('/restaurants')
+
             })
             .catch((error) => {
                 console.error("Error logging in:", error);
                 setError(error.message); // Display error to user
             });
     };
-
-    if (redirectToRestaurants) {
-        return <Redirect to="/restaurants" />;
-    }
 
     return (
         <div className="login-form-container">
