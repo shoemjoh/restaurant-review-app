@@ -1,6 +1,7 @@
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm import validates
 from config import db, bcrypt
 
 # Association table to connect User and Restaurant through Review
@@ -32,6 +33,18 @@ class User(db.Model, SerializerMixin):
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self._password_hash, password.encode('utf-8'))
+    
+    @validates('email')
+    def validate_email(self, key, email):
+        if '@' not in email:
+            raise ValueError("Email must contain '@'")
+        return email
+
+    @validates('username')
+    def validate_username(self, key, username):
+        if not username.strip():
+            raise ValueError("Username cannot be empty")
+        return username
 
 class Restaurant(db.Model, SerializerMixin):
     __tablename__ = 'restaurants'
@@ -44,6 +57,12 @@ class Restaurant(db.Model, SerializerMixin):
     reviews = db.relationship('Review', backref='restaurant')
     users = association_proxy('reviews', 'user')
 
+    @validates('name', 'city')
+    def validate_non_empty(self, key, value):
+        if not value.strip():
+            raise ValueError(f"{key.capitalize()} cannot be empty")
+        return value
+
 class Review(db.Model, SerializerMixin):
     __tablename__ = 'reviews'
     serialize_rules = ('-user.reviews', '-restaurant.reviews')  # Avoid recursive serialization
@@ -53,3 +72,15 @@ class Review(db.Model, SerializerMixin):
     rating = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'))
+
+    @validates('rating')
+    def validate_rating(self, key, rating):
+        if not (1 <= rating <= 5):
+            raise ValueError("Rating must be between 1 and 5")
+        return rating
+
+    @validates('content')
+    def validate_content(self, key, content):
+        if not content.strip():
+            raise ValueError("Content cannot be empty")
+        return content
