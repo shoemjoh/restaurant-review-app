@@ -1,14 +1,26 @@
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.associationproxy import association_proxy
 from config import db, bcrypt
+
+# Association table to connect User and Restaurant through Review
+user_restaurant_reviews = db.Table(
+    'user_restaurant_reviews',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('restaurant_id', db.Integer, db.ForeignKey('restaurants.id'), primary_key=True)
+)
 
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
+    serialize_rules = ('-reviews.user', '-restaurants')  # Avoid circular references
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True, nullable=False)
     email = db.Column(db.String, unique=True, nullable=False)
     _password_hash = db.Column(db.String, nullable=False)
+
+    reviews = db.relationship('Review', backref='user')
+    restaurants = association_proxy('reviews', 'restaurant')
 
     @hybrid_property
     def password_hash(self):
@@ -23,43 +35,21 @@ class User(db.Model, SerializerMixin):
 
 class Restaurant(db.Model, SerializerMixin):
     __tablename__ = 'restaurants'
+    serialize_rules = ('-reviews.restaurant', '-users')  # Exclude recursive relationships
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     city = db.Column(db.String, nullable=False)
 
     reviews = db.relationship('Review', backref='restaurant')
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "city": self.city,
-            "reviews": [review.to_dict_basic() for review in self.reviews]
-            # Avoid including `reviews` to prevent recursion
-        }
+    users = association_proxy('reviews', 'user')
 
 class Review(db.Model, SerializerMixin):
     __tablename__ = 'reviews'
+    serialize_rules = ('-user.reviews', '-restaurant.reviews')  # Avoid recursive serialization
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'))
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "content": self.content,
-            "rating": self.rating,
-            "user_id": self.user_id,
-            "restaurant_id": self.restaurant_id,
-            # Don't include `user` or `restaurant` here to prevent recursion
-        }
-    def to_dict_basic(self):
-        return {
-            "id": self.id,
-            "content": self.content,
-            "rating": self.rating
-        }

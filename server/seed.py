@@ -1,65 +1,33 @@
-#!/usr/bin/env python3
+from config import db, app
+from models import User, Restaurant, Review
 
-# Standard library imports
-from random import randint, choice as rc
+# Clear all tables
+with app.app_context():
+    db.session.query(Review).delete()
+    db.session.query(Restaurant).delete()
+    db.session.query(User).delete()
+    db.session.commit()
 
-# Remote library imports
-from faker import Faker
+    # Create Users
+    user1 = User(username="alice", email="alice@example.com")
+    user1.password_hash = "password1"
+    user2 = User(username="bob", email="bob@example.com")
+    user2.password_hash = "password2"
 
-# Local imports
-from app import app
-from models import db, User, Restaurant, Review
+    db.session.add_all([user1, user2])
+    db.session.commit()
 
-if __name__ == '__main__':
-    fake = Faker()
-    with app.app_context():
-        print("Starting seed...")
+    # Create Restaurants
+    restaurant1 = Restaurant(name="The Fancy Spoon", city="New York")
+    restaurant2 = Restaurant(name="Burger Haven", city="Los Angeles")
 
-        # Clear existing data
-        print("Clearing existing data...")
-        User.query.delete()
-        Restaurant.query.delete()
-        Review.query.delete()
+    db.session.add_all([restaurant1, restaurant2])
+    db.session.commit()
 
-        # Create users
-        print("Creating users...")
-        user1 = User(username="alice", email="alice@example.com")
-        user1.password_hash = "password123"
-        user2 = User(username="bob", email="bob@example.com")
-        user2.password_hash = "password456"
+    # Create Reviews that link users and restaurants
+    review1 = Review(content="Amazing food!", rating=5, user_id=user1.id, restaurant_id=restaurant1.id)
+    review2 = Review(content="Decent place.", rating=3, user_id=user1.id, restaurant_id=restaurant2.id)
+    review3 = Review(content="Loved the burgers!", rating=4, user_id=user2.id, restaurant_id=restaurant2.id)
 
-        # Add users to the session
-        db.session.add_all([user1, user2])
-        db.session.commit()
-
-        # Create restaurants
-        print("Creating restaurants...")
-        restaurants = [
-            Restaurant(name="Chez Pierre", city="Paris"),
-            Restaurant(name="Sushi World", city="Tokyo"),
-            Restaurant(name="Pizza Palace", city="New York"),
-            Restaurant(name="Curry House", city="Delhi"),
-            Restaurant(name="Pasta Place", city="Rome")
-        ]
-
-        # Add restaurants to the session
-        db.session.add_all(restaurants)
-        db.session.commit()
-
-        # Create reviews
-        print("Creating reviews...")
-        reviews = []
-        for _ in range(10):  # Creating 10 random reviews
-            review = Review(
-                content=fake.paragraph(),
-                rating=randint(1, 5),  # Random rating between 1 and 5
-                user_id=rc([user1.id, user2.id]),  # Randomly assign user
-                restaurant_id=rc([restaurant.id for restaurant in restaurants])  # Randomly assign restaurant
-            )
-            reviews.append(review)
-
-        # Add reviews to the session
-        db.session.add_all(reviews)
-        db.session.commit()
-
-        print("Seeding complete!")
+    db.session.add_all([review1, review2, review3])
+    db.session.commit()

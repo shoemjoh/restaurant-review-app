@@ -16,21 +16,23 @@ function LoginForm({ onLogin }) {
             body: JSON.stringify({ username, password }),
         })
             .then((response) => {
+                console.log("Response status:", response.status);
                 if (!response.ok) {
                     return response.json().then((data) => {
-                        // Set error from server response if available
+                        console.log("Error response from backend:", data);
                         throw new Error(data.error || "Login failed");
                     });
                 }
                 return response.json();
             })
             .then((data) => {
+                console.log("Login successful:", data);
                 onLogin(data.id); // Set user ID in App after login
                 setRedirectToRestaurants(true); // Redirect after successful login
             })
             .catch((error) => {
                 console.error("Error logging in:", error);
-                setError(error.message); // Set the error message to display
+                setError(error.message); // Display error to user
             });
     };
 

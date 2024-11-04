@@ -19,7 +19,7 @@ class Signup(Resource):
             return {"error": "Username and password required"}, 400
         user = User(
             username=data['username'],
-            email=data.get('email',''),
+            email=data.get('email', '')
         )
         user.password_hash = data['password']
         print("Password hash:", user._password_hash)
@@ -31,18 +31,26 @@ class Signup(Resource):
 class Login(Resource):
     def post(self):
         data = request.get_json()
-        user = User.query.filter(User.username==data['username']).first()
-        if user and user.check_password(data['password']):
-            session['user_id']=user.id
-            return user.to_dict(), 200
-        return {"error": "Invalid username or password."}, 401
+        user = User.query.filter(User.username == data['username']).first()
+
+        if not user:
+            print("User not found")
+            return {"error": "Invalid username or password."}, 401
+
+        if not user.check_password(data['password']):
+            print("Password check failed")
+            return {"error": "Invalid username or password."}, 401
+
+        session['user_id'] = user.id
+        print("Login successful")
+        return user.to_dict(), 200
 
 class ReviewCreate(Resource):
     def post(self):
         data = request.get_json()
         name = data['name']
         city = data['city']
-        restaurant = Restaurant.query.filter(Restaurant.name==name, Restaurant.city==city).first()
+        restaurant = Restaurant.query.filter(Restaurant.name == name, Restaurant.city == city).first()
         if not restaurant:
             restaurant = Restaurant(
                 name=name,
@@ -88,12 +96,36 @@ class ReviewUpdateDelete(Resource):
 
 class RestaurantList(Resource):
     def get(self):
-        restaurants = Restaurant.query.all()
-        return jsonify([restaurant.to_dict() for restaurant in restaurants])
+        # Get user ID from session
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Not authorized"}, 401
+
+        # Fetch the user from the database
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+
+        # Use the `restaurants` association proxy to get all restaurants the user has reviewed
+        user_restaurants = user.restaurants
+        return jsonify([restaurant.to_dict() for restaurant in user_restaurants])
+
+class Logout(Resource):
+    def post(self):
+        session.clear()  # Clear all session data
+        return {"message": "Logged out successfully"}, 200
 
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'
+
+@app.route('/me')
+def me():
+    user_id = session.get("user_id")
+    if user_id:
+        user = User.query.get(user_id)
+        return jsonify(user.to_dict())
+    return jsonify({"error": "Not logged in"}), 401
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
@@ -101,8 +133,7 @@ api.add_resource(ReviewCreate, '/reviews')
 api.add_resource(ReviewList, '/reviews/list')
 api.add_resource(ReviewUpdateDelete, '/reviews/<int:review_id>')
 api.add_resource(RestaurantList, '/restaurants')
-
-
+api.add_resource(Logout, '/logout')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
