@@ -1,6 +1,6 @@
 // ReviewForm.js
 import React, { useState } from "react";
-import "./ReviewForm.css"; // Import the CSS file for styling
+import "./ReviewForm.css";
 
 function ReviewForm({ onSubmitReview }) {
     const [name, setName] = useState("");
@@ -11,11 +11,14 @@ function ReviewForm({ onSubmitReview }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Call the onSubmitReview function with the form data
         if (onSubmitReview) {
-            onSubmitReview({ name, city, content, rating })
-                .then(() => {
-                    // Clear form fields after successful submission
+            const reviewData = { name, city, content, rating };
+            console.log("Submitting Review with data:", reviewData); // Debugging
+
+            onSubmitReview(reviewData)
+                .then((response) => {
+                    console.log("Review submitted successfully:", response);
+                    // Clear form fields
                     setName("");
                     setCity("");
                     setContent("");
@@ -24,6 +27,8 @@ function ReviewForm({ onSubmitReview }) {
                 .catch((error) => {
                     console.error("Error submitting review:", error);
                 });
+        } else {
+            console.error("onSubmitReview function is not defined");
         }
     };
 

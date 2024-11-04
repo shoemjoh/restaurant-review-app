@@ -1,9 +1,9 @@
 // SignupForm.js
 import React, { useState } from "react";
 import { Redirect } from "react-router-dom";
-import "./SignupForm.css"; // Make sure this is imported if styling is in a separate CSS file
+import "./SignupForm.css";
 
-function SignupForm() {
+function SignupForm({ onSignup }) {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -16,14 +16,15 @@ function SignupForm() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, email, password }),
         })
-            .then((r) => {
-                if (r.ok) {
-                    return r.json();
+            .then((response) => {
+                if (response.ok) {
+                    return response.json();
                 } else {
                     throw new Error("Signup failed");
                 }
             })
-            .then(() => {
+            .then((data) => {
+                onSignup(data.id); // Set user ID in App after signup
                 setRedirectToReview(true);
             })
             .catch((error) => console.error("Error:", error));
