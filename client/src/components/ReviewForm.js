@@ -1,31 +1,74 @@
-// components/ReviewForm.js
+// ReviewForm.js
 import React, { useState } from "react";
+import "./ReviewForm.css"; // Import the CSS file for styling
 
-function ReviewForm() {
-    const [restaurantName, setRestaurantName] = useState("");
+function ReviewForm({ onSubmitReview }) {
+    const [name, setName] = useState("");
     const [city, setCity] = useState("");
     const [content, setContent] = useState("");
     const [rating, setRating] = useState(5);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        fetch("/reviews", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: restaurantName, city, content, rating, user_id: 1 }),  // Assuming user_id is available
-        })
-            .then((r) => r.json())
-            .then((data) => console.log(data)); // For testing
+
+        // Call the onSubmitReview function with the form data
+        if (onSubmitReview) {
+            onSubmitReview({ name, city, content, rating })
+                .then(() => {
+                    // Clear form fields after successful submission
+                    setName("");
+                    setCity("");
+                    setContent("");
+                    setRating(5);
+                })
+                .catch((error) => {
+                    console.error("Error submitting review:", error);
+                });
+        }
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <input value={restaurantName} onChange={(e) => setRestaurantName(e.target.value)} placeholder="Restaurant Name" required />
-            <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" required />
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Review Content" required />
-            <input type="number" value={rating} onChange={(e) => setRating(e.target.value)} min="1" max="5" />
-            <button type="submit">Submit Review</button>
-        </form>
+        <div className="review-form-container">
+            <h2 className="review-form-title">Submit a Review</h2>
+            <form onSubmit={handleSubmit}>
+                <input
+                    className="review-form-input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Restaurant Name"
+                    required
+                />
+                <input
+                    className="review-form-input"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="City"
+                    required
+                />
+                <textarea
+                    className="review-form-textarea"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Write your review here"
+                    required
+                />
+                <label className="review-form-label">
+                    Rating:
+                    <input
+                        type="number"
+                        className="review-form-rating"
+                        value={rating}
+                        onChange={(e) => setRating(e.target.value)}
+                        min="1"
+                        max="5"
+                        required
+                    />
+                </label>
+                <button type="submit" className="review-form-button">
+                    Submit Review
+                </button>
+            </form>
+        </div>
     );
 }
 

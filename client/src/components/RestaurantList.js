@@ -1,26 +1,43 @@
-// components/RestaurantList.js
-import React, { useState, useEffect } from "react";
+// RestaurantList.js
+import React, { useEffect, useState } from "react";
 
 function RestaurantList() {
     const [restaurants, setRestaurants] = useState([]);
-    const [city, setCity] = useState("");
 
     useEffect(() => {
-        fetch(`/reviews/list?city=${city}`)
-            .then((r) => r.json())
-            .then((data) => setRestaurants(data));
-    }, [city]);
+        // Fetch the list of restaurants
+        fetch("/restaurants")
+            .then((response) => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error("Failed to fetch restaurants");
+            })
+            .then((data) => {
+                setRestaurants(data);
+            })
+            .catch((error) => {
+                console.error("Error fetching restaurants:", error);
+            });
+    }, []);
+
+    if (!restaurants || restaurants.length === 0) {
+        return <p>No restaurants available.</p>; // Display a message if there are no restaurants
+    }
 
     return (
         <div>
-            <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Filter by City" />
+            <h2>Restaurants</h2>
             <ul>
-                {restaurants.map((review) => (
-                    <li key={review.id}>
-                        <h2>{review.restaurant.name}</h2>
-                        <p>{review.content}</p>
-                        <p>Rating: {review.rating}</p>
-                    </li>
+                {restaurants.map((restaurant, index) => (
+                    // Add an additional check to ensure 'restaurant' is defined
+                    restaurant && (
+                        <li key={index}>
+                            <h3>{restaurant.name}</h3>
+                            <p>City: {restaurant.city}</p>
+                            {/* Add more details here if needed */}
+                        </li>
+                    )
                 ))}
             </ul>
         </div>

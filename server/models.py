@@ -35,6 +35,7 @@ class Restaurant(db.Model, SerializerMixin):
             "id": self.id,
             "name": self.name,
             "city": self.city,
+            "reviews": [review.to_dict_basic() for review in self.reviews]
             # Avoid including `reviews` to prevent recursion
         }
 
@@ -55,4 +56,10 @@ class Review(db.Model, SerializerMixin):
             "user_id": self.user_id,
             "restaurant_id": self.restaurant_id,
             # Don't include `user` or `restaurant` here to prevent recursion
+        }
+    def to_dict_basic(self):
+        return {
+            "id": self.id,
+            "content": self.content,
+            "rating": self.rating
         }

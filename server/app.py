@@ -85,7 +85,11 @@ class ReviewUpdateDelete(Resource):
         db.session.delete(review)
         db.session.commit()
         return '', 204
-        
+
+class RestaurantList(Resource):
+    def get(self):
+        restaurants = Restaurant.query.all()
+        return jsonify([restaurant.to_dict() for restaurant in restaurants])
 
 @app.route('/')
 def index():
@@ -96,6 +100,8 @@ api.add_resource(Login, '/login')
 api.add_resource(ReviewCreate, '/reviews')
 api.add_resource(ReviewList, '/reviews/list')
 api.add_resource(ReviewUpdateDelete, '/reviews/<int:review_id>')
+api.add_resource(RestaurantList, '/restaurants')
+
 
 
 if __name__ == '__main__':
