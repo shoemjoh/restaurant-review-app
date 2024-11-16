@@ -9,7 +9,7 @@ from flask_restful import Resource
 # Local imports
 from config import app, db, api
 # Add your model imports
-from models import User, Review, Restaurant
+from models import User, Review, Restaurant, Destination
 
 # Views go here!
 class Signup(Resource):
@@ -50,6 +50,7 @@ class ReviewCreate(Resource):
         data = request.get_json()
         name = data['name']
         city = data['city']
+        destination = data['destination']
         restaurant = Restaurant.query.filter(Restaurant.name == name, Restaurant.city == city).first()
         if not restaurant:
             restaurant = Restaurant(
@@ -58,6 +59,14 @@ class ReviewCreate(Resource):
             )
             db.session.add(restaurant)
             db.session.commit()
+        
+        destination = Destination(
+                name=destination
+        )
+        print(f"Destination: {destination.name}")
+        db.session.add(destination)
+        db.session.commit()
+
         review = Review(
             content=data['content'],
             rating=data['rating'],
@@ -133,20 +142,20 @@ def me():
     return jsonify({"error": "Not logged in"}), 401
 
 # Get a specific user's reviews that are above a certain rating:
-@app.route('/search', methods=['GET'])
-def search():
-    data = request.get_json()
-    rating = data.get('rating')
-    user_id = data.get('id')
-    reviews = Review.query.join(User).filter(Review.rating >= rating).all()
-    print(reviews)
-    review_list = []
-    for review in reviews:
-        if review.id == user_id:
-            print(review)
-            review_list.append(review.to_dict())
+# @app.route('/search', methods=['GET'])
+# def search():
+#     data = request.get_json()
+#     rating = data.get('rating')
+#     user_id = data.get('id')
+#     reviews = Review.query.join(User).filter(Review.rating >= rating).all()
+#     print(reviews)
+#     review_list = []
+#     for review in reviews:
+#         if review.id == user_id:
+#             print(review)
+#             review_list.append(review.to_dict())
 
-    return make_response(review_list, 200)
+#     return make_response(review_list, 200)
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
