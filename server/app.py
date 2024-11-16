@@ -3,7 +3,7 @@
 # Standard library imports
 
 # Remote library imports
-from flask import request, jsonify, session
+from flask import request, jsonify, session, make_response
 from flask_restful import Resource
 
 # Local imports
@@ -106,9 +106,13 @@ class RestaurantList(Resource):
         if not user:
             return {"error": "User not found"}, 404
 
-        # Use the `restaurants` association proxy to get all restaurants the user has reviewed
+        # Use the `restaurants` association proxy to get all restaurants the user has reviewed 
+
+
         user_restaurants = user.restaurants
         return jsonify([restaurant.to_dict() for restaurant in user_restaurants])
+    
+        # users_who_reviewed = User.query.join(Review).filter(Review.restaurant_id == restaurant_id).all()
 
 class Logout(Resource):
     def post(self):
@@ -118,6 +122,7 @@ class Logout(Resource):
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'
+   
 
 @app.route('/me')
 def me():
@@ -126,6 +131,22 @@ def me():
         user = User.query.get(user_id)
         return jsonify(user.to_dict())
     return jsonify({"error": "Not logged in"}), 401
+
+# Get a specific user's reviews that are above a certain rating:
+@app.route('/search', methods=['GET'])
+def search():
+    data = request.get_json()
+    rating = data.get('rating')
+    user_id = data.get('id')
+    reviews = Review.query.join(User).filter(Review.rating >= rating).all()
+    print(reviews)
+    review_list = []
+    for review in reviews:
+        if review.id == user_id:
+            print(review)
+            review_list.append(review.to_dict())
+
+    return make_response(review_list, 200)
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
@@ -137,4 +158,6 @@ api.add_resource(Logout, '/logout')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
+
+
 

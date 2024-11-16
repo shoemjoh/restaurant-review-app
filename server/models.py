@@ -45,6 +45,16 @@ class User(db.Model, SerializerMixin):
         if not username.strip():
             raise ValueError("Username cannot be empty")
         return username
+    
+# add a Class for destinations
+class Destination(db.Model, SerializerMixin):
+    __tablename__ = 'destinations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    restaurants = db.relationship('Restaurant', backref='destination')
+
+
 
 class Restaurant(db.Model, SerializerMixin):
     __tablename__ = 'restaurants'
