@@ -9,9 +9,9 @@ from flask_restful import Resource
 # Local imports
 from config import app, db, api
 # Add your model imports
-from models import User, Review, Restaurant, Destination
+from models import User, Review, Restaurant, City
 
-# Views go here!
+# Signup and Login
 class Signup(Resource):
     def post(self):
         data = request.get_json()
@@ -45,37 +45,47 @@ class Login(Resource):
         print("Login successful")
         return user.to_dict(), 200
 
+## Review creation
+
 class ReviewCreate(Resource):
     def post(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "User not logged in"}, 401
+        
         data = request.get_json()
         name = data['name']
-        city = data['city']
-        destination = data['destination']
-        restaurant = Restaurant.query.filter(Restaurant.name == name, Restaurant.city == city).first()
+        city_name = data['city']
+
+        # check if city exists or create it
+        city = City.query.filter_by(name=city_name).first()
+        if not city:
+            city = City(name=city_name)
+            db.session.add()
+            db.session.commit()
+        
+        # check if restaurant exists in the city or create it
+        restaurant = Restaurant.query.filter_by(name=name, city_id=city.id).first()
         if not restaurant:
             restaurant = Restaurant(
                 name=name,
-                city=city
+                city_id=city.id
             )
             db.session.add(restaurant)
             db.session.commit()
-        
-        destination = Destination(
-                name=destination
-        )
-        print(f"Destination: {destination.name}")
-        db.session.add(destination)
-        db.session.commit()
 
         review = Review(
             content=data['content'],
             rating=data['rating'],
-            user_id=data['user_id'],
+            user_id=user_id,
             restaurant_id=restaurant.id
         )
         db.session.add(review)
         db.session.commit()
         return review.to_dict(), 201
+
+
+# Hitting the list of reviews and cities
 
 class ReviewList(Resource):
     def get(self):
@@ -85,6 +95,42 @@ class ReviewList(Resource):
         else:
             reviews = Review.query.all()
         return jsonify([review.to_dict() for review in reviews])
+
+
+class RestaurantList(Resource):
+    def get(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Not authorized"}, 401
+
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+
+        # Get all restaurants the user has reviewed
+        user_restaurants = user.restaurants
+
+        # Serialize using the built-in SerializerMixin
+        return jsonify([restaurant.to_dict() for restaurant in user_restaurants])
+    
+class CityList(Resource):
+    def get(self):
+        # Return all cities as JSON
+        cities = City.query.all()
+        return jsonify([city.to_dict() for city in cities])
+    
+class UserCityList(Resource):
+    def get(self):
+        # Check if the user is logged in
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "User not logged in"}, 401
+
+        # Fetch all cities where the user has reviewed a restaurant
+        user_reviews = Review.query.filter_by(user_id=user_id).all()
+        city_ids = {review.restaurant.city_id for review in user_reviews}
+        cities = City.query.filter(City.id.in_(city_ids)).all()
+        return jsonify([city.to_dict() for city in cities])
 
 class ReviewUpdateDelete(Resource):
     def patch(self, review_id):
@@ -103,26 +149,8 @@ class ReviewUpdateDelete(Resource):
         db.session.commit()
         return '', 204
 
-class RestaurantList(Resource):
-    def get(self):
-        # Get user ID from session
-        user_id = session.get("user_id")
-        if not user_id:
-            return {"error": "Not authorized"}, 401
 
-        # Fetch the user from the database
-        user = User.query.get(user_id)
-        if not user:
-            return {"error": "User not found"}, 404
-
-        # Use the `restaurants` association proxy to get all restaurants the user has reviewed 
-
-
-        user_restaurants = user.restaurants
-        return jsonify([restaurant.to_dict() for restaurant in user_restaurants])
     
-        # users_who_reviewed = User.query.join(Review).filter(Review.restaurant_id == restaurant_id).all()
-
 class Logout(Resource):
     def post(self):
         session.clear()  # Clear all session data
@@ -160,6 +188,8 @@ def me():
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(ReviewCreate, '/reviews')
+api.add_resource(CityList, '/cities')
+api.add_resource(UserCityList, '/user/cities')
 api.add_resource(ReviewList, '/reviews/list')
 api.add_resource(ReviewUpdateDelete, '/reviews/<int:review_id>')
 api.add_resource(RestaurantList, '/restaurants')

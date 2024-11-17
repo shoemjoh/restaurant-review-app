@@ -46,28 +46,40 @@ class User(db.Model, SerializerMixin):
             raise ValueError("Username cannot be empty")
         return username
     
-# add a Class for destinations
-class Destination(db.Model, SerializerMixin):
-    __tablename__ = 'destinations'
+# add a Class for cities
+class City(db.Model, SerializerMixin):
+    __tablename__ = 'cities'
     
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
+    name = db.Column(db.String, unique=True, nullable=False)
+    
+    #Relationship with restuarants
+    restaurants = db.relationship('Restaurant', backref='city', lazy=True)
+
+    @validates('name')
+    def validate_name(self, key, name):
+        if not name.strip():
+            raise ValueError("City name cannot be empty")
+        return name
+
+    def __repr__(self):
+        return f"<City {self.name}>"
 
 class Restaurant(db.Model, SerializerMixin):
     __tablename__ = 'restaurants'
-    serialize_rules = ('-reviews.restaurant', '-users')  # Exclude recursive relationships
+    serialize_rules = ('-reviews.restaurant', '-city.restaurants', '-users')  # Exclude recursive relationships
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
-    city = db.Column(db.String, nullable=False)
+    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
 
-    reviews = db.relationship('Review', backref='restaurant')
+    reviews = db.relationship('Review', backref='restaurant') 
     users = association_proxy('reviews', 'user')
 
-    @validates('name', 'city')
+    @validates('name')
     def validate_non_empty(self, key, value):
         if not value.strip():
-            raise ValueError(f"{key.capitalize()} cannot be empty")
+            raise ValueError(f"Name cannot be empty")
         return value
 
 class Review(db.Model, SerializerMixin):
