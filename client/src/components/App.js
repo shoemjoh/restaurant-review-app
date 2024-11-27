@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, Link } from "react-router-dom";
 import SignupForm from "./SignupForm";
 import LoginForm from "./LoginForm";
-import ReviewForm from "./ReviewForm";
+import UserDashboard from "./UserDashboard";
 import RestaurantList from "./RestaurantList";
+import HotelList from "./HotelList";
 
 function App() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  // Check if user is already logged in by fetching from `/me` on mount
+  // Fetch current user session on mount
   useEffect(() => {
     fetch("/me")
       .then((response) => {
@@ -17,76 +19,94 @@ function App() {
         return response.json();
       })
       .then((data) => {
-        if (data && data.id) setUserId(data.id);
+        setUserId(data.id);
       })
-      .catch((error) => console.error("Error fetching user:", error));
+      .catch(() => {
+        setUserId(null);
+      })
+      .finally(() => {
+        setLoadingUser(false);
+      });
   }, []);
 
-  // Logout function
+  const handleLogin = (user) => {
+    setUserId(user.id); // Set user ID after successful login
+    navigate("/dashboard"); // Navigate to the dashboard immediately
+  };
+
   const handleLogout = () => {
     fetch("/logout", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
     })
       .then((response) => {
         if (response.ok) {
-          setUserId(null);
-          console.log("Logged out successfully");
-          navigate("/login"); // Redirect to login page after logout
-        } else {
-          throw new Error("Logout failed");
+          setUserId(null); // Clear user state
+          navigate("/login"); // Navigate to login page
         }
       })
       .catch((error) => console.error("Error logging out:", error));
   };
 
-  // Function to handle review submission
-  const handleReviewSubmit = (reviewData) => {
-    if (!userId) {
-      console.error("User is not logged in");
-      return;
-    }
-
-    const fullReviewData = { ...reviewData, user_id: userId };
-
-    return fetch("/reviews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(fullReviewData),
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to submit review");
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Review submitted successfully:", data);
-        navigate("/restaurants"); // Redirect to restaurant list after successful review submission
-      })
-      .catch((error) => console.error("Error submitting review:", error));
-  };
+  if (loadingUser) {
+    return <div>Loading...</div>; // Show loading screen while user session is being fetched
+  }
 
   return (
     <div>
+      {/* Always display the navbar */}
       <header>
-        <h1>Restaurant Review App</h1>
+        <h1>Review App</h1>
         <nav>
-          <Link to="/signup">Sign Up</Link> |{" "}
-          <Link to="/login">Log In</Link> |{" "}
-          <Link to="/submit-review">Submit Review</Link> |{" "}
-          <Link to="/restaurants">View Restaurants</Link> |{" "}
-          <button onClick={handleLogout} style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'blue', textDecoration: 'underline' }}>
-            Log Out
-          </button>
+          {userId ? (
+            <>
+              <Link to="/dashboard">Dashboard</Link> |{" "}
+              <Link to="/restaurants">Restaurants</Link> |{" "}
+              <Link to="/hotels">Hotels</Link> |{" "}
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "blue",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/signup">Sign Up</Link> | <Link to="/login">Log In</Link>
+            </>
+          )}
         </nav>
       </header>
+
+      {/* Define routes */}
       <main>
         <Routes>
-          <Route path="/signup" element={<SignupForm onSignup={setUserId} />} />
-          <Route path="/login" element={<LoginForm onLogin={setUserId} />} />
-          <Route path="/submit-review" element={userId ? <ReviewForm onSubmitReview={handleReviewSubmit} /> : <Navigate to="/login" />} />
-          <Route path="/restaurants" element={userId ? <RestaurantList userId={userId} /> : <Navigate to="/login" />} />
+          <Route
+            path="/login"
+            element={userId ? <Navigate to="/dashboard" /> : <LoginForm onLogin={handleLogin} />}
+          />
+          <Route
+            path="/signup"
+            element={userId ? <Navigate to="/dashboard" /> : <SignupForm onSignup={setUserId} />}
+          />
+          <Route
+            path="/dashboard"
+            element={userId ? <UserDashboard userId={userId} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/restaurants"
+            element={userId ? <RestaurantList userId={userId} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/hotels"
+            element={userId ? <HotelList userId={userId} /> : <Navigate to="/login" />}
+          />
+          <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </main>
     </div>
