@@ -53,8 +53,8 @@ function UserDashboard({ userId }) {
 
     return (
         <div className="user-dashboard">
-            <h2>My Reviewed Restaurants</h2>
             <ReviewForm onSubmitReview={handleReviewSubmit} />
+            <h2>My Destinations</h2>
             <div className="city-tiles">
                 {cities.length > 0 ? (
                     cities.map((city) => <CityTile key={city.id} name={city.name} />)

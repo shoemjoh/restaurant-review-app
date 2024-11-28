@@ -1,19 +1,23 @@
-from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import validates
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy.ext.associationproxy import association_proxy
 from config import db, bcrypt
+
 
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
-    serialize_rules = ('-reviews.user', '-restaurants', '-hotels')  # Avoid circular references
+    serialize_rules = ('-reviews.user', '-restaurants', '-hotels', '-_password_hash')
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True, nullable=False)
     email = db.Column(db.String, unique=True, nullable=False)
     _password_hash = db.Column(db.String, nullable=False)
 
+    # Relationships
     reviews = db.relationship('Review', backref='user', lazy=True)
+
+    # Association proxies (avoid serializing them to prevent recursion)
     restaurants = association_proxy('reviews', 'restaurant')
     hotels = association_proxy('reviews', 'hotel')
 
@@ -27,7 +31,7 @@ class User(db.Model, SerializerMixin):
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self._password_hash, password.encode('utf-8'))
-    
+
     @validates('email')
     def validate_email(self, key, email):
         if '@' not in email:
@@ -43,6 +47,7 @@ class User(db.Model, SerializerMixin):
 
 class City(db.Model, SerializerMixin):
     __tablename__ = 'cities'
+    serialize_rules = ('-restaurants.city', '-hotels.city')
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
@@ -62,25 +67,24 @@ class City(db.Model, SerializerMixin):
 
 class Restaurant(db.Model, SerializerMixin):
     __tablename__ = 'restaurants'
-    serialize_rules = ('-reviews.restaurant', '-city.restaurants', '-users')  # Exclude recursive relationships
+    serialize_rules = ('-reviews.restaurant', '-city.restaurants')
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
 
-    reviews = db.relationship('Review', backref='restaurant', lazy=True) 
-    users = association_proxy('reviews', 'user')
+    reviews = db.relationship('Review', backref='restaurant', lazy=True)
 
     @validates('name')
     def validate_non_empty(self, key, value):
         if not value.strip():
-            raise ValueError(f"Name cannot be empty")
+            raise ValueError("Name cannot be empty")
         return value
 
 
 class Hotel(db.Model, SerializerMixin):
     __tablename__ = 'hotels'
-    serialize_rules = ('-reviews.hotel', '-city.hotels', '-users')  # Exclude recursive relationships
+    serialize_rules = ('-reviews.hotel', '-city.hotels')
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
@@ -97,7 +101,7 @@ class Hotel(db.Model, SerializerMixin):
 
 class Review(db.Model, SerializerMixin):
     __tablename__ = 'reviews'
-    serialize_rules = ('-user.reviews', '-restaurant.reviews', '-hotel.reviews')  # Avoid circular serialization
+    serialize_rules = ('-user.reviews', '-restaurant.reviews', '-hotel.reviews', '-user._password_hash')
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String, nullable=False)

@@ -6,14 +6,10 @@ function RestaurantList({ userId }) {
     const [error, setError] = useState(null); // Add error state
 
     // Fetch the user's reviewed restaurants
-    const fetchRestaurants = () => {
-        if (!userId) {
-            setRestaurants([]); // Clear restaurants if user is logged out
-            setLoading(false);
-            return;
-        }
+    useEffect(() => {
+        if (!userId) return;
 
-        setLoading(true); // Set loading to true while fetching
+        setLoading(true);
         fetch("/restaurants")
             .then((response) => {
                 if (!response.ok) {
@@ -36,11 +32,6 @@ function RestaurantList({ userId }) {
             .finally(() => {
                 setLoading(false); // Stop loading after fetch completes
             });
-    };
-
-    // Fetch restaurants when the component mounts or userId changes
-    useEffect(() => {
-        fetchRestaurants();
     }, [userId]);
 
     // Handle deleting a review
@@ -52,7 +43,6 @@ function RestaurantList({ userId }) {
                 if (!response.ok) {
                     throw new Error("Failed to delete review");
                 }
-                // Remove the deleted review from the restaurants state
                 setRestaurants((prevRestaurants) =>
                     prevRestaurants.map((restaurant) => ({
                         ...restaurant,
@@ -67,15 +57,15 @@ function RestaurantList({ userId }) {
     };
 
     if (loading) {
-        return <p>Loading restaurants...</p>; // Show loading indicator while fetching
+        return <p>Loading restaurants...</p>;
     }
 
     if (error) {
-        return <p>{error}</p>; // Show error message if fetch fails
+        return <p>{error}</p>;
     }
 
     if (restaurants.length === 0) {
-        return <p>No restaurants found. Start reviewing your favorite places!</p>; // Handle empty state
+        return <p>No restaurants found. Start reviewing your favorite places!</p>;
     }
 
     return (

@@ -140,23 +140,15 @@ class RestaurantList(Resource):
     def get(self):
         user_id = session.get("user_id")
         if not user_id:
-            return {"error": "Not authorized"}, 401
+            return {"error": "User not logged in"}, 401
 
-        try:
-            user = User.query.get(user_id)
-            if not user:
-                return {"error": "User not found"}, 404
-
-            # Ensure only restaurants with valid cities are included
-            user_restaurants = [
-                restaurant for restaurant in user.restaurants if restaurant.city
-            ]
-
-            return jsonify([restaurant.to_dict() for restaurant in user_restaurants])
-        except Exception as e:
-            print(f"Error fetching restaurants: {e}")
-            return {"error": "Failed to fetch restaurants"}, 500
-
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+        
+        # Get all restaurants the user has reviewed
+        user_restaurants = Restaurant.query.join(Review).filter(Review.user_id == user_id).all()
+        return jsonify([restaurant.to_dict() for restaurant in user_restaurants])
 
 class HotelList(Resource):
     def get(self):
