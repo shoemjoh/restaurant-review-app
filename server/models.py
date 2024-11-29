@@ -7,7 +7,7 @@ from config import db, bcrypt
 
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
-    serialize_rules = ('-reviews.user', '-restaurants', '-hotels', '-_password_hash')
+    serialize_rules = ('-reviews.user', '-restaurants', '-hotels', '-experiences', '-_password_hash')
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True, nullable=False)
@@ -20,6 +20,7 @@ class User(db.Model, SerializerMixin):
     # Association proxies (avoid serializing them to prevent recursion)
     restaurants = association_proxy('reviews', 'restaurant')
     hotels = association_proxy('reviews', 'hotel')
+    experiences = association_proxy('reviews', 'experience')
 
     # get list of reviewed cities
     def get_reviewed_cities(self):
@@ -29,6 +30,8 @@ class User(db.Model, SerializerMixin):
                 city_ids.add(review.restaurant.city_id)
             if review.hotel:
                 city_ids.add(review.hotel.city_id)
+            if review.experience:
+                city_ids.add(review.experience.city_id)
         return City.query.filter(City.id.in_(city_ids)).all()
     
     def get_reviews_by_city(self,city_id):
@@ -38,7 +41,8 @@ class User(db.Model, SerializerMixin):
             (Review.user_id == self.id) &
             (
                 (Review.restaurant_id != None) & (Review.restaurant.has(city_id=city_id)) |
-                (Review.hotel_id != None) & (Review.hotel.has(city_id=city_id))
+                (Review.hotel_id != None) & (Review.hotel.has(city_id=city_id)) |
+                (Review.experience_id != None) & (Review.experience.has(city_id=city_id))
             )
         ).all()
 
@@ -68,13 +72,14 @@ class User(db.Model, SerializerMixin):
 
 class City(db.Model, SerializerMixin):
     __tablename__ = 'cities'
-    serialize_rules = ('-restaurants.city', '-hotels.city')
+    serialize_rules = ('-restaurants.city', '-hotels.city', '-experiences.city')
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
 
     restaurants = db.relationship('Restaurant', backref='city', lazy=True)
     hotels = db.relationship('Hotel', backref='city', lazy=True)
+    experiences = db.relationship('Experience', backref='city', lazy=True)
 
     @validates('name')
     def validate_name(self, key, name):
@@ -89,7 +94,10 @@ class City(db.Model, SerializerMixin):
         # serialize city information for display on user dashboard
         return {
             "id": self.id,
-            "name": self.name
+            "name": self.name,
+            "restaurants_count": len(self.restaurants),
+            "hotels_count": len(self.hotels),
+            "experiences_count": len(self.experiences),
         }
 
 
@@ -126,9 +134,26 @@ class Hotel(db.Model, SerializerMixin):
             raise ValueError("Name cannot be empty")
         return value
 
+class Experience(db.Model, SerializerMixin):
+    __tablename__ = 'experiences'
+    serialize_rules = ('-reviews.experience', '-city.experiences')
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
+
+    reviews = db.relationship('Review', backref='experience', lazy=True)
+
+    @validates('name')
+    def validate_non_empty(self, key, value):
+        if not value.strip():
+            raise ValueError("Name cannot be empty")
+        return value
+
+
 class Review(db.Model, SerializerMixin):
     __tablename__ = 'reviews'
-    serialize_rules = ('-user.reviews', '-restaurant.reviews', '-hotel.reviews', '-user._password_hash')
+    serialize_rules = ('-user.reviews', '-restaurant.reviews', '-hotel.reviews', '-experience.reviews', '-user._password_hash')
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String, nullable=False)
@@ -136,6 +161,7 @@ class Review(db.Model, SerializerMixin):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=True)
     hotel_id = db.Column(db.Integer, db.ForeignKey('hotels.id'), nullable=True)
+    experience_id = db.Column(db.Integer, db.ForeignKey('experiences.id'), nullable=True)
 
     @validates('rating')
     def validate_rating(self, key, rating):
@@ -149,17 +175,17 @@ class Review(db.Model, SerializerMixin):
             raise ValueError("Content cannot be empty")
         return content
 
-    @validates('restaurant_id', 'hotel_id')
+    @validates('restaurant_id', 'hotel_id', "experience_id")
     def validate_one_reference(self, key, value):
         """
-        Ensures that a review is linked to only one entity: either a restaurant or a hotel.
+        Ensures that a review is linked to only one entity: either a restaurant, hotel, or experience.
         """
-        if key == 'restaurant_id' and value and self.hotel_id:
-            raise ValueError("A review cannot be linked to both a restaurant and a hotel.")
-        if key == 'hotel_id' and value and self.restaurant_id:
-            raise ValueError("A review cannot be linked to both a restaurant and a hotel.")
+        if  (key == 'restaurant_id' and value and (self.hotel_id or self.experience_id)) or \
+            (key == 'hotel_id' and value and (self.restaurant_id or self.experience_id)) or \
+            (key == 'experience_id' and value and (self.restaurant_id or self.hotel_id)):
+                raise ValueError("A review can only be linked to one entity: a restaurant, hotel, or experience.")
         return value
-    
+        
     def to_dict(self):
         """
         Serialize review information for display on the city-specific page.
@@ -169,5 +195,6 @@ class Review(db.Model, SerializerMixin):
             "content": self.content,
             "rating": self.rating,
             "restaurant": self.restaurant.name if self.restaurant else None,
-            "hotel": self.hotel.name if self.hotel else None
+            "hotel": self.hotel.name if self.hotel else None,
+            "experience": self.experience.name if self.experience else None
         }
