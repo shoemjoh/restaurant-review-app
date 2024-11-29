@@ -181,14 +181,40 @@ class UserCityList(Resource):
             return {"error": "User not logged in"}, 401
 
         try:
-            user_reviews = Review.query.filter_by(user_id=user_id).all()
-            city_ids = {review.restaurant.city_id for review in user_reviews if review.restaurant}
-            cities = City.query.filter(City.id.in_(city_ids)).all()
+            # Fetch the user
+            user = User.query.get(user_id)
+            if not user:
+                return {"error": "User not found"}, 404
+            
+            # Use the get_reviewed_cities method to fetch cities
+            cities = user.get_reviewed_cities()
+
+            # Serialize and return the city data
             return jsonify([city.to_dict() for city in cities])
         except Exception as e:
             print(f"Error fetching user cities: {e}")
             return {"error": "Failed to fetch user cities"}, 500
+        
+class UserCityReviews(Resource):
+    def get(self, city_id):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "User not logged in"}, 401
+        
+        try:
+            # Fetch the user
+            user = User.query.get(user_id)
+            if not user:
+                return {"error": "User not found"}, 404
+            
+            # Use the get_reviews_by_city method to fetch reviews for the given city
+            reviews = user.get_reviews_by_city(city_id)
 
+            # Serialize and return the review data
+            return jsonify([review.to_dict() for review in reviews])
+        except Exception as e:
+            print(f"Error fetching reviews for city {city_id}: {e}")
+            return {"error": "Failed to fetch reviews"}, 500
 
 class ReviewUpdateDelete(Resource):
     def patch(self, review_id):
@@ -243,6 +269,8 @@ api.add_resource(RestaurantList, '/restaurants')
 api.add_resource(CityList, '/cities')
 api.add_resource(UserCityList, '/user/cities')
 api.add_resource(HotelList, '/hotels')
+api.add_resource(UserCityReviews, '/user/cities/<int:city_id>/reviews')
+
 
 
 

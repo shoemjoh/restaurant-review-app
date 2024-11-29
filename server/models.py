@@ -21,6 +21,27 @@ class User(db.Model, SerializerMixin):
     restaurants = association_proxy('reviews', 'restaurant')
     hotels = association_proxy('reviews', 'hotel')
 
+    # get list of reviewed cities
+    def get_reviewed_cities(self):
+        city_ids = set()
+        for review in self.reviews:
+            if review.restaurant:
+                city_ids.add(review.restaurant.city_id)
+            if review.hotel:
+                city_ids.add(review.hotel.city_id)
+        return City.query.filter(City.id.in_(city_ids)).all()
+    
+    def get_reviews_by_city(self,city_id):
+        # returns all reviews made by the user in a specific city.
+
+        return Review.query.filter(
+            (Review.user_id == self.id) &
+            (
+                (Review.restaurant_id != None) & (Review.restaurant.has(city_id=city_id)) |
+                (Review.hotel_id != None) & (Review.hotel.has(city_id=city_id))
+            )
+        ).all()
+
     @hybrid_property
     def password_hash(self):
         raise AttributeError("Password is not accessible!")
@@ -63,6 +84,13 @@ class City(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f"<City {self.name}>"
+    
+    def to_dict(self):
+        # serialize city information for display on user dashboard
+        return {
+            "id": self.id,
+            "name": self.name
+        }
 
 
 class Restaurant(db.Model, SerializerMixin):
@@ -98,7 +126,6 @@ class Hotel(db.Model, SerializerMixin):
             raise ValueError("Name cannot be empty")
         return value
 
-
 class Review(db.Model, SerializerMixin):
     __tablename__ = 'reviews'
     serialize_rules = ('-user.reviews', '-restaurant.reviews', '-hotel.reviews', '-user._password_hash')
@@ -132,3 +159,15 @@ class Review(db.Model, SerializerMixin):
         if key == 'hotel_id' and value and self.restaurant_id:
             raise ValueError("A review cannot be linked to both a restaurant and a hotel.")
         return value
+    
+    def to_dict(self):
+        """
+        Serialize review information for display on the city-specific page.
+        """
+        return {
+            "id": self.id,
+            "content": self.content,
+            "rating": self.rating,
+            "restaurant": self.restaurant.name if self.restaurant else None,
+            "hotel": self.hotel.name if self.hotel else None
+        }

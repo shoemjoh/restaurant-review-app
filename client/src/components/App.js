@@ -5,6 +5,7 @@ import LoginForm from "./LoginForm";
 import UserDashboard from "./UserDashboard";
 import RestaurantList from "./RestaurantList";
 import HotelList from "./HotelList";
+import CityReviews from "./CityReviews"; // Import the CityReviews component
 
 function App() {
   const navigate = useNavigate();
@@ -106,6 +107,12 @@ function App() {
             path="/hotels"
             element={userId ? <HotelList userId={userId} /> : <Navigate to="/login" />}
           />
+          {/* New route for viewing reviews for a specific city */}
+          <Route
+            path="/user/cities/:cityId/reviews"
+            element={userId ? <CityReviews /> : <Navigate to="/login" />}
+          />
+          {/* Redirect all other paths to login */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </main>

@@ -57,7 +57,9 @@ function UserDashboard({ userId }) {
             <h2>My Destinations</h2>
             <div className="city-tiles">
                 {cities.length > 0 ? (
-                    cities.map((city) => <CityTile key={city.id} name={city.name} />)
+                    cities.map((city) => (
+                        <CityTile key={city.id} id={city.id} name={city.name} />
+                    ))
                 ) : (
                     <p>You haven't reviewed any cities yet!</p>
                 )}
