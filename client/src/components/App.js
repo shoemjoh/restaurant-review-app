@@ -5,6 +5,7 @@ import LoginForm from "./LoginForm";
 import UserDashboard from "./UserDashboard";
 import RestaurantList from "./RestaurantList";
 import HotelList from "./HotelList";
+import ExperienceList from "./ExperienceList";
 import CityReviews from "./CityReviews"; // Import the CityReviews component
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
               <Link to="/dashboard">Dashboard</Link> |{" "}
               <Link to="/restaurants">Restaurants</Link> |{" "}
               <Link to="/hotels">Hotels</Link> |{" "}
+              <Link to="/experiences">Experiences</Link> |{" "}
               <button
                 onClick={handleLogout}
                 style={{
@@ -106,6 +108,10 @@ function App() {
           <Route
             path="/hotels"
             element={userId ? <HotelList userId={userId} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/experiences"
+            element={userId ? <ExperienceList userId={userId} /> : <Navigate to="/login" />}
           />
           {/* New route for viewing reviews for a specific city */}
           <Route

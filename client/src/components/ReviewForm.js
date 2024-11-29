@@ -55,6 +55,7 @@ function ReviewForm({ onSubmitReview }) {
                     >
                         <option value="restaurant">Restaurant</option>
                         <option value="hotel">Hotel</option>
+                        <option value="experience">Experience</option>
                     </select>
                 </label>
                 {formik.touched.type && formik.errors.type && (

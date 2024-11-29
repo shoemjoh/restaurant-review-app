@@ -8,7 +8,7 @@ from flask_restful import Resource
 
 # Local imports
 from config import app, db, api
-from models import User, Review, Restaurant, City, Hotel
+from models import User, Review, Restaurant, City, Hotel, Experience
 
 # Signup and Login
 class Signup(Resource):
@@ -68,7 +68,7 @@ class ReviewCreate(Resource):
         if not (review_type and name and city_name and content and rating):
             return {"error": "Missing required fields (type, name, city, content, rating)"}, 400
 
-        if review_type not in ['restaurant', 'hotel']:
+        if review_type not in ['restaurant', 'hotel', 'experience']:
             return {"error": "Invalid review type"}, 400
 
         try:
@@ -110,6 +110,22 @@ class ReviewCreate(Resource):
                     user_id=user_id,
                     hotel_id=hotel.id
                 )
+            
+            # Handle experience reviews
+            elif review_type == "experience":
+                # Ensure the experience exists and references the correct city
+                experience = Experience.query.filter_by(name=name, city_id=city.id).first()
+                if not experience:
+                    experience = Experience(name=name, city_id=city.id)
+                    db.session.add(experience)
+                    db.session.commit()
+
+                review = Review(
+                    content=content,
+                    rating=rating,
+                    user_id=user_id,
+                    experience_id=experience.id
+                )
 
             db.session.add(review)
             db.session.commit()
@@ -122,18 +138,18 @@ class ReviewCreate(Resource):
 
 
 
-class ReviewList(Resource):
-    def get(self):
-        city = request.args.get('city')
-        try:
-            if city:
-                reviews = Review.query.join(Restaurant).filter(Restaurant.city == city).all()
-            else:
-                reviews = Review.query.all()
-            return jsonify([review.to_dict() for review in reviews])
-        except Exception as e:
-            print(f"Error fetching reviews: {e}")
-            return {"error": "Failed to fetch reviews"}, 500
+# class ReviewList(Resource):
+#     def get(self):
+#         city = request.args.get('city')
+#         try:
+#             if city:
+#                 reviews = Review.query.join(Restaurant).filter(Restaurant.city == city).all()
+#             else:
+#                 reviews = Review.query.all()
+#             return jsonify([review.to_dict() for review in reviews])
+#         except Exception as e:
+#             print(f"Error fetching reviews: {e}")
+#             return {"error": "Failed to fetch reviews"}, 500
 
 
 class RestaurantList(Resource):
@@ -163,6 +179,20 @@ class HotelList(Resource):
         # Get all hotels the user has reviewed
         user_hotels = Hotel.query.join(Review).filter(Review.user_id == user_id).all()
         return jsonify([hotel.to_dict() for hotel in user_hotels])
+    
+class ExperienceList(Resource):
+    def get(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "User not logged in"}, 401
+        
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+        
+        # Get all experiences the user has reviewed
+        user_experiences = Experience.query.join(Review).filter(Review.user_id == user_id).all()
+        return jsonify([experience.to_dict() for experience in user_experiences])
 
 class CityList(Resource):
     def get(self):
@@ -263,12 +293,13 @@ api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
 api.add_resource(ReviewCreate, '/reviews')
-api.add_resource(ReviewList, '/reviews/list')
+# api.add_resource(ReviewList, '/reviews/list')
 api.add_resource(ReviewUpdateDelete, '/reviews/<int:review_id>')
 api.add_resource(RestaurantList, '/restaurants')
+api.add_resource(HotelList, '/hotels')
+api.add_resource(ExperienceList, '/experiences')
 api.add_resource(CityList, '/cities')
 api.add_resource(UserCityList, '/user/cities')
-api.add_resource(HotelList, '/hotels')
 api.add_resource(UserCityReviews, '/user/cities/<int:city_id>/reviews')
 
 

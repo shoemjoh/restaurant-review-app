@@ -42,7 +42,7 @@ function CityReviews() {
                 <ul>
                     {reviews.map((review) => (
                         <li key={review.id}>
-                            <h4>{review.restaurant || review.hotel}</h4>
+                            <h4>{review.restaurant || review.hotel || review.experience}</h4>
                             <p>Rating: {review.rating}</p>
                             <p>{review.content}</p>
                         </li>
