@@ -4,10 +4,16 @@ from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.associationproxy import association_proxy
 from config import db, bcrypt
 
+# Association table for the many-to-many relationship between users and reviews
+liked_reviews = db.Table(
+    'liked_reviews',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('review_id', db.Integer, db.ForeignKey('reviews.id'), primary_key=True)
+)
 
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
-    serialize_rules = ('-reviews.user', '-restaurants', '-hotels', '-experiences', '-_password_hash')
+    serialize_rules = ('-reviews.user', '-restaurants', '-hotels', '-experiences', '-_password_hash', '-liked_reviews')
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True, nullable=False)
@@ -16,13 +22,16 @@ class User(db.Model, SerializerMixin):
 
     # Relationships
     reviews = db.relationship('Review', backref='user', lazy=True)
+    liked_reviews = db.relationship(
+        'Review', secondary=liked_reviews, back_populates='liked_by_users'
+    )
 
     # Association proxies (avoid serializing them to prevent recursion)
     restaurants = association_proxy('reviews', 'restaurant')
     hotels = association_proxy('reviews', 'hotel')
     experiences = association_proxy('reviews', 'experience')
 
-    # get list of reviewed cities
+    # Get list of reviewed cities
     def get_reviewed_cities(self):
         city_ids = set()
         for review in self.reviews:
@@ -34,9 +43,8 @@ class User(db.Model, SerializerMixin):
                 city_ids.add(review.experience.city_id)
         return City.query.filter(City.id.in_(city_ids)).all()
     
-    def get_reviews_by_city(self,city_id):
-        # returns all reviews made by the user in a specific city.
-
+    def get_reviews_by_city(self, city_id):
+        # Returns all reviews made by the user in a specific city.
         return Review.query.filter(
             (Review.user_id == self.id) &
             (
@@ -91,7 +99,7 @@ class City(db.Model, SerializerMixin):
         return f"<City {self.name}>"
     
     def to_dict(self):
-        # serialize city information for display on user dashboard
+        # Serialize city information for display on user dashboard
         return {
             "id": self.id,
             "name": self.name,
@@ -108,6 +116,9 @@ class Restaurant(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
+    address = db.Column(db.String, nullable=True)  # Address from Places API
+    latitude = db.Column(db.Float, nullable=True)  # Latitude for map integration
+    longitude = db.Column(db.Float, nullable=True)  # Longitude for map integration
 
     reviews = db.relationship('Review', backref='restaurant', lazy=True)
 
@@ -125,6 +136,9 @@ class Hotel(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
+    address = db.Column(db.String, nullable=True)  # Address from Places API
+    latitude = db.Column(db.Float, nullable=True)  # Latitude for map integration
+    longitude = db.Column(db.Float, nullable=True)  # Longitude for map integration
 
     reviews = db.relationship('Review', backref='hotel', lazy=True)
 
@@ -141,6 +155,9 @@ class Experience(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
+    address = db.Column(db.String, nullable=True)  # Address from Places API
+    latitude = db.Column(db.Float, nullable=True)  # Latitude for map integration
+    longitude = db.Column(db.Float, nullable=True)  # Longitude for map integration
 
     reviews = db.relationship('Review', backref='experience', lazy=True)
 
@@ -153,21 +170,20 @@ class Experience(db.Model, SerializerMixin):
 
 class Review(db.Model, SerializerMixin):
     __tablename__ = 'reviews'
-    serialize_rules = ('-user.reviews', '-restaurant.reviews', '-hotel.reviews', '-experience.reviews', '-user._password_hash')
+    serialize_rules = ('-user.reviews', '-restaurant.reviews', '-hotel.reviews', '-experience.reviews', '-user._password_hash', '-liked_by_users')
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String, nullable=False)
-    rating = db.Column(db.Integer, nullable=False)
+    must_do = db.Column(db.Boolean, nullable=False, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=True)
     hotel_id = db.Column(db.Integer, db.ForeignKey('hotels.id'), nullable=True)
     experience_id = db.Column(db.Integer, db.ForeignKey('experiences.id'), nullable=True)
 
-    @validates('rating')
-    def validate_rating(self, key, rating):
-        if not (1 <= rating <= 5):
-            raise ValueError("Rating must be between 1 and 5")
-        return rating
+    # Many-to-many relationship
+    liked_by_users = db.relationship(
+        'User', secondary=liked_reviews, back_populates='liked_reviews'
+    )
 
     @validates('content')
     def validate_content(self, key, content):
@@ -190,11 +206,14 @@ class Review(db.Model, SerializerMixin):
         """
         Serialize review information for display on the city-specific page.
         """
+        place = self.restaurant or self.hotel or self.experience
         return {
             "id": self.id,
             "content": self.content,
-            "rating": self.rating,
-            "restaurant": self.restaurant.name if self.restaurant else None,
-            "hotel": self.hotel.name if self.hotel else None,
-            "experience": self.experience.name if self.experience else None
+            "must_do": self.must_do,
+            "place_type": "restaurant" if self.restaurant else "hotel" if self.hotel else "experience",
+            "place_name": place.name if place else None,
+            "address": place.address if place else None,
+            "latitude": place.latitude if place else None,
+            "longitude": place.longitude if place else None,
         }

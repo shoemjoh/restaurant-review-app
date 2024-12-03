@@ -62,11 +62,14 @@ class ReviewCreate(Resource):
         name = data.get('name')
         city_name = data.get('city')
         content = data.get('content')
-        rating = data.get('rating')
+        must_do = data.get('must_do', False)
+        address = data.get('address')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
 
         # Validate input
-        if not (review_type and name and city_name and content and rating):
-            return {"error": "Missing required fields (type, name, city, content, rating)"}, 400
+        if not (review_type and name and city_name and content):
+            return {"error": "Missing required fields (type, name, city, content, must_do)"}, 400
 
         if review_type not in ['restaurant', 'hotel', 'experience']:
             return {"error": "Invalid review type"}, 400
@@ -84,13 +87,13 @@ class ReviewCreate(Resource):
                 # Ensure the restaurant exists and references the correct city
                 restaurant = Restaurant.query.filter_by(name=name, city_id=city.id).first()
                 if not restaurant:
-                    restaurant = Restaurant(name=name, city_id=city.id)
+                    restaurant = Restaurant(name=name, city_id=city.id, address=address, latitude=latitude, longitude=longitude)
                     db.session.add(restaurant)
                     db.session.commit()
 
                 review = Review(
                     content=content,
-                    rating=rating,
+                    must_do=must_do,
                     user_id=user_id,
                     restaurant_id=restaurant.id
                 )
@@ -100,13 +103,13 @@ class ReviewCreate(Resource):
                 # Ensure the hotel exists and references the correct city
                 hotel = Hotel.query.filter_by(name=name, city_id=city.id).first()
                 if not hotel:
-                    hotel = Hotel(name=name, city_id=city.id)
+                    hotel = Hotel(name=name, city_id=city.id, address=address, latitude=latitude, longitude=longitude)
                     db.session.add(hotel)
                     db.session.commit()
 
                 review = Review(
                     content=content,
-                    rating=rating,
+                    must_do=must_do,
                     user_id=user_id,
                     hotel_id=hotel.id
                 )
@@ -116,13 +119,13 @@ class ReviewCreate(Resource):
                 # Ensure the experience exists and references the correct city
                 experience = Experience.query.filter_by(name=name, city_id=city.id).first()
                 if not experience:
-                    experience = Experience(name=name, city_id=city.id)
+                    experience = Experience(name=name, city_id=city.id, address=address, latitude=latitude, longitude=longitude)
                     db.session.add(experience)
                     db.session.commit()
 
                 review = Review(
                     content=content,
-                    rating=rating,
+                    must_do=must_do,
                     user_id=user_id,
                     experience_id=experience.id
                 )
@@ -135,22 +138,6 @@ class ReviewCreate(Resource):
             print(f"Error creating review: {e}")
             db.session.rollback()
             return {"error": "Internal server error"}, 500
-
-
-
-# class ReviewList(Resource):
-#     def get(self):
-#         city = request.args.get('city')
-#         try:
-#             if city:
-#                 reviews = Review.query.join(Restaurant).filter(Restaurant.city == city).all()
-#             else:
-#                 reviews = Review.query.all()
-#             return jsonify([review.to_dict() for review in reviews])
-#         except Exception as e:
-#             print(f"Error fetching reviews: {e}")
-#             return {"error": "Failed to fetch reviews"}, 500
-
 
 class RestaurantList(Resource):
     def get(self):
@@ -253,8 +240,6 @@ class ReviewUpdateDelete(Resource):
             data = request.get_json()
             if 'content' in data:
                 review.content = data['content']
-            if 'rating' in data:
-                review.rating = data['rating']
             db.session.commit()
             return review.to_dict(), 200
         except Exception as e:
@@ -293,7 +278,6 @@ api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
 api.add_resource(ReviewCreate, '/reviews')
-# api.add_resource(ReviewList, '/reviews/list')
 api.add_resource(ReviewUpdateDelete, '/reviews/<int:review_id>')
 api.add_resource(RestaurantList, '/restaurants')
 api.add_resource(HotelList, '/hotels')

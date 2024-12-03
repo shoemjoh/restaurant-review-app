@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReviewForm from "./ReviewForm";
 import CityTile from "./CityTile";
+import "./UserDashboard.css";
 
 function UserDashboard({ userId }) {
     const [cities, setCities] = useState([]);
@@ -52,17 +53,21 @@ function UserDashboard({ userId }) {
     }
 
     return (
-        <div className="user-dashboard">
-            <ReviewForm onSubmitReview={handleReviewSubmit} />
-            <h2>My Destinations</h2>
-            <div className="city-tiles">
-                {cities.length > 0 ? (
-                    cities.map((city) => (
-                        <CityTile key={city.id} id={city.id} name={city.name} />
-                    ))
-                ) : (
-                    <p>You haven't reviewed any cities yet!</p>
-                )}
+        <div className="user-dashboard-container">
+            <div className="city-tiles-container">
+                <h2>My Destinations</h2>
+                <div className="city-tiles">
+                    {cities.length > 0 ? (
+                        cities.map((city) => (
+                            <CityTile key={city.id} id={city.id} name={city.name} />
+                        ))
+                    ) : (
+                        <p>You haven't reviewed any cities yet!</p>
+                    )}
+                </div>
+            </div>
+            <div className="review-form-container">
+                <ReviewForm onSubmitReview={handleReviewSubmit} />
             </div>
         </div>
     );

@@ -106,9 +106,6 @@ function SignupForm({ onSignup }) {
                     {formik.isSubmitting ? "Signing Up..." : "Sign Up"}
                 </button>
             </form>
-            <p className="signup-form-text">
-                Already have an account? <a href="/login">Log in</a>
-            </p>
         </div>
     );
 }

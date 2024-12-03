@@ -80,7 +80,7 @@ function RestaurantList({ userId }) {
                         restaurant.reviews.map((review) => (
                             <div key={review.id}>
                                 <p>Content: {review.content}</p>
-                                <p>Rating: {review.rating}</p>
+                                <p>Must-Do: {review.must_do}</p>
                                 <button
                                     onClick={() => handleDeleteReview(review.id)}
                                     style={{

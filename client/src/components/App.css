@@ -1,0 +1,65 @@
+/* Global styling for headers. Headings */
+h1 {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    /* Elegant serif for headings */
+    font-weight: 700;
+    /* Bold for emphasis */
+    color: #111;
+    /* Deep color for contrast */
+}
+
+
+/* App Header */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 10px;
+    background-color: #333;
+    color: #fff;
+}
+
+.app-title {
+    font-size: 24px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #fff;
+}
+
+/* UseContext Dark/Light Theme Toggle Button */
+.theme-toggle-container {
+    display: flex;
+    justify-content: right;
+    margin: 10px 10px;
+    /* Adjust margin to reduce space */
+}
+
+.theme-toggle-button {
+    padding: 5px 10px;
+    /* Smaller padding for a smaller button */
+    font-size: 12px;
+    /* Smaller font size */
+    cursor: pointer;
+    background-color: #666666;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+}
+
+.theme-toggle-button:hover {
+    background-color: #0056b3;
+}
+
+/* Auth Links on log-in page */
+.auth-links {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.auth-links a {
+    color: #380920;
+    text-decoration: none;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}

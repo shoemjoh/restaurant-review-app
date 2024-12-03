@@ -1,18 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
+import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from "../googleMapsConfig"; // Use shared config
 import "./ReviewForm.css";
 
 function ReviewForm({ onSubmitReview }) {
+    const [address, setAddress] = useState("");
+    const [latitude, setLatitude] = useState(null);
+    const [longitude, setLongitude] = useState(null);
+    const [error, setError] = useState(null);
+
+    // Load Google Places API using shared configuration
+    const { isLoaded } = useJsApiLoader({
+        googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+        libraries: GOOGLE_MAPS_LIBRARIES,
+    });
+
     const validationSchema = Yup.object({
         type: Yup.string().required("Review type is required"),
         name: Yup.string().required("Name is required"),
         city: Yup.string().required("City is required"),
         content: Yup.string().required("Review content is required"),
-        rating: Yup.number()
-            .min(1, "Rating must be at least 1")
-            .max(5, "Rating can be at most 5")
-            .required("Rating is required"),
     });
 
     const formik = useFormik({
@@ -21,16 +30,27 @@ function ReviewForm({ onSubmitReview }) {
             name: "",
             city: "",
             content: "",
-            rating: 5,
+            must_do: false, // New field for must-do checkbox
         },
         validationSchema,
         onSubmit: (values, { resetForm }) => {
             if (onSubmitReview) {
-                console.log("Submitting review with data:", values); // Debugging
-                onSubmitReview(values)
+                const reviewData = {
+                    ...values,
+                    address,
+                    latitude,
+                    longitude,
+                };
+
+                console.log("Submitting review with data:", reviewData); // Debugging
+                onSubmitReview(reviewData)
                     .then((response) => {
                         console.log("Review submitted successfully:", response);
                         resetForm(); // Clear form fields
+                        setAddress("");
+                        setLatitude(null);
+                        setLongitude(null);
+                        setError(null);
                     })
                     .catch((error) => {
                         console.error("Error submitting review:", error);
@@ -41,9 +61,22 @@ function ReviewForm({ onSubmitReview }) {
         },
     });
 
+    const handlePlaceSelect = (autocomplete) => {
+        const place = autocomplete.getPlace();
+        if (place && place.geometry) {
+            formik.setFieldValue("name", place.name); // Update name field
+            setAddress(place.formatted_address || "");
+            setLatitude(place.geometry.location.lat());
+            setLongitude(place.geometry.location.lng());
+        } else {
+            setError("Invalid place selected.");
+        }
+    };
+
+    if (!isLoaded) return <p>Loading Google Maps...</p>;
+
     return (
         <div className="review-form-container">
-            <h2 className="review-form-title">Submit a Review</h2>
             <form onSubmit={formik.handleSubmit}>
                 <label className="review-form-label">
                     Review Type:
@@ -62,17 +95,26 @@ function ReviewForm({ onSubmitReview }) {
                     <div className="review-form-error">{formik.errors.type}</div>
                 )}
 
-                <input
-                    className="review-form-input"
-                    name="name"
-                    value={formik.values.name}
-                    onChange={formik.handleChange}
-                    placeholder="Name"
-                    required
-                />
+                <label className="review-form-label">
+                    <Autocomplete
+                        onLoad={(autocomplete) => (window.autocomplete = autocomplete)}
+                        onPlaceChanged={() => handlePlaceSelect(window.autocomplete)}
+                    >
+                        <input
+                            type="text"
+                            className="review-form-input"
+                            name="name"
+                            value={formik.values.name}
+                            onChange={formik.handleChange}
+                            placeholder="Name"
+                            required
+                        />
+                    </Autocomplete>
+                </label>
                 {formik.touched.name && formik.errors.name && (
                     <div className="review-form-error">{formik.errors.name}</div>
                 )}
+                {error && <div className="review-form-error">{error}</div>}
 
                 <input
                     className="review-form-input"
@@ -99,25 +141,25 @@ function ReviewForm({ onSubmitReview }) {
                 )}
 
                 <label className="review-form-label">
-                    Rating:
+                    Must-Do:
                     <input
-                        type="number"
-                        className="review-form-rating"
-                        name="rating"
-                        value={formik.values.rating}
+                        type="checkbox"
+                        className="review-form-checkbox"
+                        name="must_do"
+                        checked={formik.values.must_do}
                         onChange={formik.handleChange}
-                        min="1"
-                        max="5"
-                        required
                     />
                 </label>
-                {formik.touched.rating && formik.errors.rating && (
-                    <div className="review-form-error">{formik.errors.rating}</div>
-                )}
 
                 <button type="submit" className="review-form-button">
                     Submit Review
                 </button>
+
+                {address && (
+                    <p className="review-form-location">
+                        Location: {address} (Lat: {latitude}, Lng: {longitude})
+                    </p>
+                )}
             </form>
         </div>
     );

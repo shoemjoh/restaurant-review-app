@@ -66,3 +66,4 @@ instance
 package-lock.json
 
 .env
+googleMapsConfig.js
