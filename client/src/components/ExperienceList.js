@@ -80,7 +80,11 @@ function ExperienceList({ userId }) {
                         experience.reviews.map((review) => (
                             <div key={review.id}>
                                 <p>Content: {review.content}</p>
-                                <p>Must-Do: {review.must_do}</p>
+                                <p>{review.must_do && (
+                                    <span style={{ color: "green" }}>
+                                        Must-Do
+                                    </span>
+                                )}</p>
                                 <button
                                     onClick={() => handleDeleteReview(review.id)}
                                     style={{

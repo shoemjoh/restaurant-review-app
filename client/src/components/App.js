@@ -81,14 +81,14 @@ function App() {
               userId ? (
                 <Navigate to="/dashboard" />
               ) : (
-                <>
+                <div className="login-page">
                   <LoginForm onLogin={handleLogin} />
                   <div className="auth-links">
                     <p>
                       Don't have an account? <a href="/signup">Sign Up</a>
                     </p>
                   </div>
-                </>
+                </div>
               )
             }
           />
